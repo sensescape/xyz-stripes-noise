@@ -73,7 +73,7 @@ layers:
         data: { source: mapzen, layer: earth }
         draw:
             polygons:
-                style: stripes-earth
+                style: stripes-noise
                 order: global.feature_order
                 color: [0.500,0.500,0.500]
 
@@ -82,7 +82,8 @@ layers:
         draw:
             polygons:
                 # style: waves-black
-                style: waves-white
+                # style: waves-white
+                style: waves-noise
                 color: [0.700,0.700,0.700]
                 order: global.feature_order
 
@@ -348,7 +349,7 @@ layers:
                 not: { protect_class: ['2','3','5']}
             draw:
                 polygons:
-                    style: zigzag-green
+                    style: zigzag-noise
                     color: [0.500,0.500,0.500]
                     # style: stripes-hatch
                     # color: [0.750,0.750,0.750]
@@ -386,7 +387,7 @@ layers:
             # default for national forests and more?
             draw:
                 polygons:
-                    # style: zigzag-green
+                    # style: zigzag-noise
                     # color: [0.500,0.500,0.500]
                     style: diagonal-stripes-weave
                     color: [0.960,0.960,0.960]
@@ -640,6 +641,20 @@ styles:
                     pos.y += sin(pos.x*30.)*.01;
                     color.rgb = mix(color.rgb, vec3(0.950),stripes(pos*70.,.2));
 
+    waves-noise:
+        base: polygons
+        mix: [pattern-noise, patterns-stripes]
+        shaders:
+            uniforms:
+                u_noise_freq: 0.002
+                u_noise_scale: 0.025
+            blocks:
+                color: |
+                    //vec2 pos = getScreenNonStretchCoords();
+                    //pos.y += sin(pos.x*30.)*.01;
+                    color.rgb = mix(color.rgb, vec3(0.950),
+                    stripes(patternNoiseCoords() * 70.,.2));
+
     stripes-earth:
         base: polygons
         mix: [functions-aastep, pallete, patterns-stripes, space-screen]
@@ -656,22 +671,59 @@ styles:
                                         STRIPES_WIDTH,
                                         STRIPES_ANGLE));
 
-    zigzag-green:
+    zigzag-noise:
         base: polygons
-        mix: [functions-aastep, patterns-zigzag, space-screen]
+        mix: [space-tile, generative-noise, patterns-zigzag, pattern-noise]
         shaders:
             defines:
                 ZIGZAG_WIDTH: .4
-                ZIGZAG_ALPHA: 1.0
-                ZIGZAG_SCALE: 30.
+                ZIGZAG_SCALE: 35.
                 ZIGZAG_FREQ: 1.
+            uniforms:
+                u_noise_freq: 0.002
+                u_noise_scale: 0.04
+                u_background_color: [0.95, 0.95, 0.95]
             blocks:
                 color: |
-                    vec2 st = getScreenNonStretchCoords();
-                    color.rgb = mix(color.rgb,vec3(0.950),zigzag(st*130.,
-                                        ZIGZAG_FREQ,
-                                        ZIGZAG_WIDTH));
+                    float a = zigzag(patternNoiseCoords() * ZIGZAG_SCALE, ZIGZAG_FREQ, ZIGZAG_WIDTH);
+                    color.rgb = mix(color.rgb, u_background_color, a);
 
+    stripes-noise:
+        base: polygons
+        mix: [space-tile, generative-noise, patterns-stripes, pattern-noise]
+        shaders:
+            defines:
+                STRIPES_WIDTH: .5
+                STRIPES_ALPHA: 1.0
+                STRIPES_SCALE: 100.
+                STRIPES_ANGLE: 1.570796325
+            uniforms:
+                u_noise_freq: 0.002
+                u_noise_scale: 0.03
+                u_background_color: [0.95, 0.95, 0.95]
+            blocks:
+                color: |
+                    float a = stripes(patternNoiseCoords() * STRIPES_SCALE,
+                                    STRIPES_WIDTH,
+                                    STRIPES_ANGLE);
+                    color.rgb = mix(color.rgb, u_background_color, a);
+
+    pattern-noise:
+        mix: [space-tile, generative-noise]
+        shaders:
+            uniforms:
+                u_noise_freq: 0.002
+                u_noise_scale: 0.03
+            blocks:
+                global: |
+                    vec2 patternNoiseCoords() {
+                        float zbase = u_tile_origin.z - 12.;
+                        vec2 st = fract(
+                            v_pos.xy +
+                            noise(worldPosition().xy * u_noise_freq * exp2(zbase)) * u_noise_scale
+                        );
+                        return st;
+                    }
 
     stripes-buildings:
         base: polygons
@@ -1800,3 +1852,98 @@ styles:
                             return step(threshold, value);
                         #endif
                     }
+
+    generative-random:
+        doc:
+            author: 
+                name: Patricio Gonzalez Vivo
+                twitter: patriciogv
+            version: 0.0.1
+            tangram-version: 0.0.7
+            licence: MIT
+            description: |
+                Set of functions about random.
+                For more information on this theme read [this chapter of The Book of Shaders about Random](http://thebookofshaders.com/10/).
+        test:
+            random_float: { blocks: { color: "    color.rgb += random(v_texcoord.x*2.);" } }
+            random_vec2: { blocks: { color: "    color.rgb += random(v_texcoord.xy*2.);" } }
+            random_vec3: { blocks: { color: "    color.rgb += random(vec3(v_texcoord.xy*2.,u_time));" } }
+            random2_vec2: { blocks: { color: "    color.rg += random2(v_texcoord.xy*2.);" } }
+            random3_vec2: { blocks: { color: "    color.rgb += random3(v_texcoord.xy*2.);" } }
+            random3_vec3: { blocks: { color: "    color.rgb += random3(vec3(v_texcoord.xy*2.,u_time));" } }
+            random_float_t: { defines: { RANDOM_TEXSAMPLE: 1 }, blocks: { color: "    color.rgb += random(v_texcoord.x*2.);" } }
+            random_vec2_t: { defines: { RANDOM_TEXSAMPLE: 1 }, blocks: { color: "    color.rgb += random(v_texcoord.xy*2.);" } }
+            random_vec3_t: { defines: { RANDOM_TEXSAMPLE: 1 }, blocks: { color: "    color.rgb += random(vec3(v_texcoord.xy*2.,u_time));" } }
+            random2_vec2_t: { defines: { RANDOM_TEXSAMPLE: 1 }, blocks: { color: "    color.rg += random2(v_texcoord.xy*2.);" } }
+            random3_vec2_t: { defines: { RANDOM_TEXSAMPLE: 1 }, blocks: { color: "    color.rgb += random3(v_texcoord.xy*2.);" } }
+            random3_vec3_t: { defines: { RANDOM_TEXSAMPLE: 1 }, blocks: { color: "    color.rgb += random3(vec3(v_texcoord.xy*2.,u_time));" } }
+            
+        shaders:
+            uniforms:
+                u_random: https://tangrams.github.io/blocks/generative/imgs/tex16.png
+            blocks:
+                global: |
+                    vec3 random3 (vec2 p) {
+                        #ifdef RANDOM_TEXSAMPLE
+                        return texture2D(u_random,fract(p*2.),-100.).rgb;
+                        #else
+                        return fract(sin(vec3( dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)), dot(p,vec2(419.2,371.9)) ))*43758.5453); 
+                        #endif
+                    }
+                    vec3 random3 (vec3 p) {
+                        #ifdef RANDOM_TEXSAMPLE
+                        vec2 uv = fract(p.xy+vec2(37.0,17.0)*p.z);
+                        return texture2D(u_random, fract(uv*2.), -100.0).rgb;
+                        #else
+                        float j = 4096.0*sin(dot(p,vec3(17.0, 59.4, 15.0)));
+                        vec3 r;
+                        r.z = fract(512.0*j);
+                        j *= .125;
+                        r.x = fract(512.0*j);
+                        j *= .125;
+                        r.y = fract(512.0*j);
+                        return r-0.5;
+                        #endif
+                    }
+                    vec2 random2 (vec2 p) { 
+                        #ifdef RANDOM_TEXSAMPLE
+                        return random3(p).rg;
+                        #else
+                        return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453); 
+                        #endif
+                    }
+                    float random (float x) { 
+                        return fract(sin(x)*43758.5453);
+                    }
+                    float random (vec2 p) { 
+                        #ifdef RANDOM_TEXSAMPLE
+                        return random3(p).r;
+                        #else
+                        return fract(1e4 * sin(17.0 * p.x + p.y * 0.1) * (0.1 + abs(sin(p.y * 13.0 + p.x)))); 
+                        #endif
+                    }
+                    float random (vec3 p) { 
+                        #ifdef RANDOM_TEXSAMPLE
+                        return random3(p).r;
+                        #else
+                        return fract(sin(dot(p.xyz, vec3(70.9898,78.233,32.4355)))* 43758.5453123); 
+                        #endif
+                    }
+
+    space-tile:
+        shaders:
+            blocks:
+                global: |
+                    // Variant to be add to both vertex and fragments shaders
+                    #ifndef v_pos
+                    varying vec3 v_pos;
+                    #endif
+                    //
+                    // Get the coordinates in tile space
+                    // ================================
+                    vec2 getTileCoords() {
+                        return fract(v_pos.xy);
+                    }
+                position: |
+                    // Normalize the attribute position of a vertex
+                    v_pos = modelPosition().xyz;
