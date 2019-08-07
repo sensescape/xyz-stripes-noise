@@ -83,7 +83,8 @@ layers:
             polygons:
                 # style: waves-black
                 # style: waves-white
-                style: waves-noise
+                # style: waves-noise
+                style: waves-noise-animate
                 color: [0.700,0.700,0.700]
                 order: global.feature_order
 
@@ -654,6 +655,31 @@ styles:
                     //pos.y += sin(pos.x*30.)*.01;
                     color.rgb = mix(color.rgb, vec3(0.950),
                     stripes(patternNoiseCoords() * 70.,.2));
+
+    waves-noise-animate:
+        base: polygons
+        mix: [pattern-noise, patterns-stripes]
+        animated: true
+        shaders:
+            uniforms:
+                u_noise_freq: 0.002
+                u_noise_scale: 0.025
+            blocks:
+                global: |
+                    vec2 patternNoiseCoordsAnimate() {
+                        float zbase = u_tile_origin.z - 12.;
+                        vec2 st = fract(
+                            v_pos.xy +
+                            noise(vec3((vec2(u_time * 30., 7.) + worldPosition().xy) * u_noise_freq * exp2(zbase), u_time)) * u_noise_scale
+                        );
+                        return st;
+                    }
+                color: |
+                    //vec2 pos = getScreenNonStretchCoords();
+                    //pos.y += sin(pos.x*30.)*.01;
+                    color.rgb = mix(color.rgb, vec3(0.950),
+                    stripes(patternNoiseCoordsAnimate() * 70.,.2));
+
 
     stripes-earth:
         base: polygons
