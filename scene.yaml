@@ -83,8 +83,8 @@ layers:
             polygons:
                 # style: waves-black
                 # style: waves-white
-                # style: waves-noise
-                style: waves-noise-animate
+                style: waves-noise
+                # style: waves-noise-animate
                 color: [0.700,0.700,0.700]
                 order: global.feature_order
 
