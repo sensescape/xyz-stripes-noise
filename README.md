@@ -1,4 +1,7 @@
-# simple-demo
+# Stripes - Noise
+
+![STRIPES](https://raw.githubusercontent.com/sensescape/xyz-stripes-noise/master/images/amsterdam-stripes.jpg)
+[https://sensescape.github.io/xyz-stripes/#18/22.27836/-245.83732](https://sensescape.github.io/xyz-stripes/#18/22.27836/-245.83732)
 
 The simplest possible [Tangram](http://github.com/tangrams/tangram) setup.
 
