@@ -9,8 +9,6 @@ The simplest possible [Tangram](http://github.com/tangrams/tangram) setup.
 
 Live demo: http://tangrams.github.io/simple-demo/
 
-![tangram-demo screenshot](https://cloud.githubusercontent.com/assets/459970/6629470/c007b1de-c8e4-11e4-854e-fd69f5135b3a.png)
-
 ### To run locally:
 
 Download this repo, then start a web server in its directory:
